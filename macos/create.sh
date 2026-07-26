@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2024 Oxide Computer Company
+# Copyright 2026 Oxide Computer Company
 #
 
 set -o xtrace
@@ -78,14 +78,31 @@ mkdir "$TOP/tmp"
 #
 mkdir -p "$TOP/input/cpio"
 if [[ ! -f "$TOP/input/cpio/authorized_keys" ]]; then
-	if [[ ! -f $HOME/.ssh/authorized_keys ]]; then
-		echo "you have no $HOME/.ssh/authorized_keys file"
+	if ! ssh-keygen -lf "$HOME/.ssh/authorized_keys"; then
+		set +o xtrace
+		echo
+		echo "$HOME/.ssh/authorized_keys does not appear to be a"
+		echo "valid SSH public key file"
 		echo
 		echo "populate $TOP/input/cpio/authorized_keys and run again"
 		echo
 		exit 1
 	fi
 	cp "$HOME/.ssh/authorized_keys" "$TOP/input/cpio/authorized_keys"
+fi
+
+#
+# Even though we encourage the use of SSH with keys, there is no particular
+# reason that we need to insist.  Emit a warning if the user has provided an
+# empty key file in case this was done in error.
+#
+if [[ ! -s "$TOP/input/cpio/authorized_keys" ]]; then
+	set +o xtrace
+	echo >&2
+	echo "WARNING: $TOP/input/cpio/authorized_keys is an empty file" >&2
+	echo >&2
+	sleep 2
+	set -o xtrace
 fi
 
 #
@@ -107,7 +124,9 @@ echo 'Just a moment...' >/dev/msglog
     -P 'Primary Administrator' -s /bin/bash '$XNAME'
 /bin/passwd -N '$XNAME'
 /bin/mkdir '/home/$XNAME/.ssh'
-/bin/cp /root/.ssh/authorized_keys '/home/$XNAME/.ssh/authorized_keys'
+if [[ -f /root/.ssh/authorized_keys ]]; then
+	/bin/cp /root/.ssh/authorized_keys '/home/$XNAME/.ssh/authorized_keys'
+fi
 /bin/chown -R '$XNAME:staff' '/home/$XNAME'
 /bin/chmod 0700 '/home/$XNAME'
 /bin/sed -i \\
@@ -123,16 +142,23 @@ echo 'Just a moment...' >/dev/msglog
 /usr/bin/pkg install /system/virtualization/open-vm-tools
 
 (
-    echo
-    echo
-    banner 'oh, hello!'
-    echo
-    echo "You should be able to SSH to your VM:"
-    echo
-    ipadm show-addr -po type,addr | grep '^dhcp:' |
-        sed -e 's/dhcp:/    ssh $XNAME@/' -e 's,/.*,,'
-    echo
-    echo
+	echo
+	echo
+	banner 'oh, hello!'
+	echo
+	echo
+	if [[ -s '/home/$XNAME/.ssh/authorized_keys' ]]; then
+		echo "You should be able to SSH to your VM:"
+		echo
+		ipadm show-addr -po type,addr | grep '^dhcp:' |
+		    sed -e 's/dhcp:/    ssh $XNAME@/' -e 's,/.*,,'
+	else
+		echo "No SSH keys were provided!"
+		echo
+		echo "Press Enter and use the console to log in as root."
+	fi
+	echo
+	echo
 ) >/dev/msglog
 exit 0
 EOF

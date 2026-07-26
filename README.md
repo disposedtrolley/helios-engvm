@@ -4,7 +4,7 @@ This repository contains tools for setting up a Helios virtual or physical host
 for development purposes.  It provides support for at least the following
 environments:
 
-* Linux workstation, Ubuntu 20.04.01 LTS, KVM/QEMU as managed by libvirt
+* Linux workstation, Ubuntu 24.04.4 LTS, KVM/QEMU as managed by libvirt
 * Macintosh workstation (with an Intel CPU), VMware Fusion 12
 
 ## Creating a Helios Virtual Machine
@@ -13,7 +13,7 @@ environments:
 
 #### Linux
 
-These instructions assume you are using an Ubuntu 20.04.01 LTS system and that
+These instructions assume you are using an Ubuntu 24.04.4 LTS system and that
 you have the libvirt suite installed.  The easiest way to get these tools is to
 install the `virt-manager` package, which also gets you a limited GUI interface
 for managing virtual machines; e.g.,
@@ -119,9 +119,9 @@ $ sudo virsh net-start default
 
 #### Create the VM
 
-You can now create a virtual machine. If you chose to use a non-default config,
-provide its name as the argument, which will override the default. E.g., for a
-config called `big.sh`:
+You can now create a virtual machine.  If you chose to use a non-default
+configuration, provide its name as the argument, which will override the
+default; e.g., for a configuration called `big.sh`:
 
 ```
 host ~/helios-engvm $ ./create.sh big
@@ -142,6 +142,7 @@ You should be able to SSH to your VM:
 
 If you need to get into the root account on the console to debug something, the
 development image ships with an empty root password to make it easy to do so.
+If you choose not to provide SSH keys, this is the only way to log in.
 
 You can halt the VM and destroy the created resources (disks, etc) with the
 matching `destroy.sh`:
